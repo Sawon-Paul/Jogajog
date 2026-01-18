@@ -1,9 +1,11 @@
 'use client'
+
 import { createClient } from '@/utils/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 
-export default function VerifyOtp() {
+// 1. THE CONTENT COMPONENT (Your Design + Logic)
+function VerifyContent() {
   const [otp, setOtp] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -15,10 +17,13 @@ export default function VerifyOtp() {
     setLoading(true)
     const supabase = createClient()
     
+    // Clean the OTP (remove spaces)
+    const cleanToken = otp.trim()
+    
     // Attempt to verify the OTP
     const { error } = await supabase.auth.verifyOtp({
-      email: email!,
-      token: otp,
+      email: email || '',
+      token: cleanToken,
       type: 'signup'
     })
 
@@ -57,10 +62,10 @@ export default function VerifyOtp() {
           <div>
             <label className="block text-xs font-medium text-indigo-200 mb-3 uppercase tracking-wider text-center">Enter Verification Code</label>
             
-            {/* UPDATED INPUT: maxLength is now 8, and tracking is adjusted to fit 8 digits */}
+            {/* UPDATED INPUT: maxLength is 10 to be safe, styled for 8 */}
             <input 
               type="text" 
-              maxLength={8}
+              maxLength={10}
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
               className="w-full bg-black/20 border border-white/20 text-white text-center text-3xl tracking-[0.25em] font-bold rounded-2xl py-5 focus:ring-4 focus:ring-indigo-500/50 focus:border-indigo-400 outline-none transition-all placeholder-white/10 font-mono"
@@ -90,5 +95,14 @@ export default function VerifyOtp() {
         </div>
       </div>
     </div>
+  )
+}
+
+// 2. THE PAGE EXPORT (Wraps Content in Suspense to fix Build Error)
+export default function VerifyOtp() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-black text-white">Loading verification...</div>}>
+      <VerifyContent />
+    </Suspense>
   )
 }
